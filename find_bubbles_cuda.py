@@ -287,16 +287,16 @@ class grid():
             self.mass_array.fill(0)  # Reset if previously allocated
 
         num_atoms = len(pdb.coords)
-        last_percent = -1
+        #last_percent = -1
 
         for start in range(0, num_atoms, chunk_size):
             end = min(start + chunk_size, num_atoms)
 
             # Print progress every 5%
-            percent = int(100 * end / num_atoms)
-            if percent != last_percent and percent % 5 == 0:
-                print(f"Calculating cell masses... {percent}% complete")
-                last_percent = percent
+            #percent = int(100 * end / num_atoms)
+            #if percent != last_percent and percent % 5 == 0:
+            #    print(f"Calculating cell masses... {percent}% complete")
+            #    last_percent = percent
 
             # Batch data
             coords_batch = pdb.coords[start:end]
@@ -451,12 +451,12 @@ def main():
     pdb_filename = sys.argv[1]
     grid_space = 1
     
-    start_time = time.perf_counter()
     
+    start_time = time.time()
     pdb = PDB(pdb_filename)
     pdb.read()
     #pdb.read_box()
-    end_time = time.perf_counter()
+    end_time = time.time()
     print("PDB reading time: " + str(end_time - start_time) + "\n")
     #pdb.read_pdb_parallel()
     
@@ -475,40 +475,41 @@ def main():
     #                    resnames=np.array(pdb.resnames),
     #                    masses=np.array(pdb.masses, dtype=np.float32),
     #                    coords=np.array(pdb.coords, dtype=np.float32))
-    print("Saved binary file: wrapped_data")
+    #print("Saved binary file: wrapped_data")
     
-
+    start_time = time.time()
     box_grid.get_boundaries(pdb)
-    end_time = time.perf_counter()
-    print("Box wrapping time: " + str(end_time - start_time) + "\n")
+    end_time = time.time()
+    print("Box wrapping time: " + str(end_time - start_time) + " seconds\n")
 
     #pdb.resnames, pdb.coords, pdb.masses = load_npz_to_gpu("wrapped_data.npz")
+    start_time = time.time()
     box_grid.initialize_cells_cuda()
-    end_time = time.perf_counter()
-    print("Grid initialized: " + str(end_time - start_time) + "\n")
+    end_time = time.time()
+    print("Grid initialized time: " + str(end_time - start_time) + " seconds\n")
+    start_time = time.time()
     box_grid.apply_boundaries_to_protein(pdb)
-    end_time = time.perf_counter()
-    print("Grid boundaries applied: " + str(end_time - start_time) + "\n")
+    end_time = time.time()
+    print("Grid boundaries applied time: " + str(end_time - start_time) + " seconds\n")
+    start_time = time.time()
     box_grid.calculate_cell_masses_cuda(pdb)
-    end_time = time.perf_counter()
-    print("Cell masses calculated: " + str(end_time - start_time) + "\n")
+    end_time = time.time()
+    print("Cell masses calculated time: " + str(end_time - start_time) + " seconds\n")
     
-    end_time = time.perf_counter()
-    print("Grid creation time: " + str(end_time - start_time) + "\n")
-    #box_grid.calculate_densities()
-    #start_time = time.time()
+    start_time = time.time()
     box_grid.calculate_densities_cuda()
     #end_time = time.time()
-    end_time = time.perf_counter()
-    print("Density calculation: " + str(end_time - start_time) + "\n")
+    end_time = time.time()
+    print("Density calculation time: " + str(end_time - start_time) + " seconds\n")
     #with open("init_time", "w") as f:
     #    print(end_time - start_time, file=f)
+    start_time = time.time()
     bubble_atoms = bubble()
     bubble_atoms.find(box_grid.xcells, box_grid.ycells, box_grid.zcells, 
                       box_grid.densities, grid_space)
     bubble_atoms.write_pdb()
-    end_time = time.perf_counter()
-    print("PDB bubble writing: " + str(end_time - start_time) + "\n")
+    end_time = time.time()
+    print("PDB bubble writing time: " + str(end_time - start_time) + " seconds\n")
 
 if __name__ == '__main__':
     main()
