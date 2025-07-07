@@ -1,3 +1,5 @@
+# TODO: docstring
+
 import sys
 import numpy as np
 import math
@@ -6,6 +8,8 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 
 #import MDAnalysis as mda
+
+# TODO: talk to Abraham about using attrs for these classes
 
 class Atom:
 
@@ -56,6 +60,7 @@ class Atom:
     def set_crds(self, new_crds):
         self.crds = new_crds
 
+    # TODO: find a better way to handle this. Use a common chem library? openmm.unit?
     def get_mass(self, atom):
         self.name = atom[12:16].strip(" ")
 
@@ -95,6 +100,8 @@ class Atom:
             self.mass = 0
         return
 
+# TODO: replace with an object read by MDTraj (that would also
+#  automatically handle masses)
 class PDB():
 
     def __init__(self, filename):
@@ -214,7 +221,8 @@ class PDB():
             #names=np.array(names)
             #masses=np.array(masses, dtype=np.float32)
             #coords=np.array(coords, dtype=np.float32)
-        
+    
+    # replace with automated utilities in mdtraj
     def read_box(self):
         with open(self.filename, 'r') as f:
             for line in f:
@@ -277,11 +285,8 @@ class Box():
 
         return
 
-        
-
-
-class grid():
-
+class Grid():
+    # TODO: docstrings
     def __init__(self, grid_space):
         self.mass_array = []
         self.coordinates = []
