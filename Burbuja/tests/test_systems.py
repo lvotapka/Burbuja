@@ -122,6 +122,16 @@ def test_triclinic_box_trypsin():
         "There should not be a bubble in the triclinic_box_trypsin.pdb structure."
     return
 
+def test_membrane():
+    """
+    This system is a membrane with no bubbles.
+    """
+    pdb_filename = os.path.join(DATA_DIRECTORY, "membrane_system.pdb")
+    result_str = burbuja.has_bubble(pdb_filename)
+    assert result_str == False, \
+        "There should not be a bubble in the membrane_system.pdb structure."
+    return
+
 @pytest.mark.needs_cupy
 def test_triclinic_box_trypsin_cupy():
     """

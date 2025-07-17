@@ -10,6 +10,13 @@ import re
 import numpy as np
 import mdtraj
 
+unusual_element_names = {
+    "POT": "K",  # Potassium
+    "SOD": "Na",  # Sodium
+    "CLA": "Cl",  # Chlorine
+}
+
+
 def get_box_information_from_pdb_file(pdb_filename):
     """
     Extract box information from a PDB file.
@@ -73,6 +80,9 @@ def get_mass_from_element_symbol(element_symbol, name_with_spaces):
         # otherwise, deduce element from first two characters of atom name
         # remove digits found in some hydrogen atom names
         symbol = name_with_spaces[0:2].strip().lstrip("0123456789")
+        if symbol in unusual_element_names:
+            symbol = unusual_element_names[symbol]
+
         try:
             # Some molecular dynamics PDB files, such as gromacs with ffamber force
             # field, include 4-character hydrogen atom names beginning with "H".
@@ -89,7 +99,17 @@ def get_mass_from_element_symbol(element_symbol, name_with_spaces):
         
         except KeyError:
             # OK, I give up
-            element = None
+            #element = None
+            # Don't give up!!
+            symbol = name_with_spaces[0:1].strip().lstrip("0123456789")
+            try:
+                if len(name_with_spaces) == 4 and name_with_spaces[0:1] == "H":
+                    element = mdtraj.core.element.hydrogen
+                else:
+                    element = mdtraj.core.element.get_by_symbol(symbol)
+            except KeyError:
+                # If we still can't find the element, return None
+                element = None
 
     if element is None:
         mass = 0.0
@@ -122,7 +142,13 @@ def fill_out_coordinates_and_masses(pdb_filename, coordinates, n_frames, n_atoms
                     atom_id += 1
                     name_with_spaces = line[12:16]
                     element_symbol = line[76:78].strip()
+                    
                     mass = get_mass_from_element_symbol(element_symbol, name_with_spaces)
+                    if mass == 0.0:
+                        print(f"Warning: No mass found for atom {name_with_spaces} in frame {frame_id}. "
+                              "Assuming mass of 0.0.")
+                        print("element_symbol:", element_symbol, "name_with_spaces:", name_with_spaces)
+                        exit()
                     mass_list.append(mass)
                 if atom_id == n_atoms:
                     atom_id = 0

@@ -1,6 +1,6 @@
 Developer Guide
 ===============
 
-This page details how to contribute to seekrflow. 
+This page details how to contribute to Burbuja.
 
 Coming soon...
