@@ -34,7 +34,7 @@ class Grid():
     
     def initialize_cells(
             self, 
-            use_cupy=False
+            use_cupy=False,
             ) -> None:
         """
         Assign the number of cells in each direction based on the
@@ -54,14 +54,19 @@ class Grid():
         self.grid_space_y = L_y / (self.ycells - 1)
         self.grid_space_z = L_z / (self.zcells - 1)
         total_coordinates = self.xcells * self.ycells * self.zcells
+
+
         if use_cupy:
             import cupy as cp
             self.mass_array = cp.zeros(total_coordinates, dtype=cp.float32)
             self.densities = cp.zeros(total_coordinates, dtype=cp.float32)
+
         else:
             self.mass_array = np.zeros(total_coordinates)
             self.densities = np.zeros(total_coordinates)
+
         return
+
 
     def apply_boundaries_to_protein(
             self, 
@@ -100,7 +105,8 @@ class Grid():
             n_atoms: int,
             frame_id: int = 0,
             chunk_size: int = 5000,
-            use_cupy: bool = False
+            use_cupy: bool = False,
+            store_atomic_information: bool = False
             ) -> None:
         """
         Calculate the mass contained within each cell of the grid.

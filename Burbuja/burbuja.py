@@ -37,6 +37,7 @@ def burbuja(
         a, b, c, alpha, beta, gamma = parse.get_box_information_from_pdb_file(structure)
         n_frames, n_atoms = parse.get_num_frames_and_atoms_from_pdb_file(structure)
         coordinates = np.zeros((n_frames, n_atoms, 3), dtype=np.float32)
+        masses = np.zeros(n_atoms, dtype=np.float32)
         unitcell_vectors0 = np.array([
             [a, b * np.cos(gamma), c * np.cos(beta)],
             [0, b * np.sin(gamma), c * (np.cos(alpha) - np.cos(beta) * np.cos(gamma)) / np.sin(gamma)],
@@ -50,7 +51,7 @@ def burbuja(
                   "the generation of this trajectory, you must load a different trajectory file "
                   "format, such as a DCD file, and provide the topology file to Burbuja in order "
                   "for the correct unit cell vectors to be used for each frame.")
-        masses = parse.fill_out_coordinates_and_masses(structure, coordinates, n_frames, n_atoms)
+        parse.fill_out_coordinates_and_masses(structure, coordinates, masses, n_frames, n_atoms)
         
     else:
         n_frames = structure.n_frames
