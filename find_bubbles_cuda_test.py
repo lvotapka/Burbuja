@@ -250,7 +250,7 @@ class grid():
         self.zcells = int((L_z + spacing) / spacing)
         total_coordinates = self.xcells * self.ycells * self.zcells
 
-        #print("total coordinates", total_coordinates)
+        print("total coordinates", total_coordinates)
 
         # Only allocate what is strictly necessary
         self.mass_array = cp.zeros(total_coordinates, dtype=cp.float32)
@@ -336,67 +336,33 @@ class grid():
             # -------------------------------
             is_nonwater = ~is_water
             if cp.any(is_nonwater):
-                coords_nw = grid_coords[is_nonwater]
-                mnw = masses[is_nonwater]
+                coords_nw = grid_coords[is_nonwater]     # shape: (N_atoms, 3)
+                mnw = masses[is_nonwater]                # shape: (N_atoms,)
 
-                neighbor_range = cp.arange(-1, 2, dtype=cp.int32)
-                dx, dy, dz = cp.meshgrid(neighbor_range, neighbor_range, neighbor_range, indexing='ij')
-                offsets = cp.stack([dx.ravel(), dy.ravel(), dz.ravel()], axis=1)  # (27, 3)
+                # Compute linear indices for each coordinate
+                xi = coords_nw[:, 0]
+                yi = coords_nw[:, 1]
+                zi = coords_nw[:, 2]
+                linear_idx = xi * ycells * zcells + yi * zcells + zi
 
-                # Neighbor cells per atom: shape (N_atoms, 27, 3)
-                neighbors = coords_nw[:, None, :] + offsets[None, :, :]
-                neighbors %= cp.array([xcells, ycells, zcells], dtype=cp.int32)
-
-                # Compute flattened 1D indices for the grid
-                xi_n = neighbors[:, :, 0]
-                yi_n = neighbors[:, :, 1]
-                zi_n = neighbors[:, :, 2]
-                linear_idx = xi_n * ycells * zcells + yi_n * zcells + zi_n  # shape: (N_atoms, 27)
-
-                # Expand each atom's mass to its 27 neighbors, multiplied by 2.0
-                mnw_expanded = cp.tile(mnw[:, None] * 2.0, (1, 27))  # shape: (N_atoms, 27)
-
-                # Accumulate masses in the global mass_array
-                cp.add.at(self.mass_array, linear_idx.ravel(), mnw_expanded.ravel())
+                # Accumulate mass into the grid (self.mass_array is 1D)
+                cp.add.at(self.mass_array, linear_idx, mnw)
 
 
-    def calculate_densities_cuda(self, chunk_size=1000, total_cells=6):
+    def calculate_densities_cuda(self, chunk_size=1000):
         xcells, ycells, zcells = self.xcells, self.ycells, self.zcells
-        grid_shape = (xcells, ycells, zcells)
         N = xcells * ycells * zcells
 
-        mass_grid = self.mass_array.reshape(grid_shape)
+        mass_flat = self.mass_array.ravel()
         self.densities = cp.zeros(N, dtype=cp.float32)
 
-        # Neighbors
-        neighbor_range = cp.arange(-total_cells, total_cells + 1)
-        dx, dy, dz = cp.meshgrid(neighbor_range, neighbor_range, neighbor_range, indexing='ij')
-        neighbor_offsets = cp.stack([dx.ravel(), dy.ravel(), dz.ravel()], axis=1)
-        M = neighbor_offsets.shape[0]  # 13^3 = 2197 if total_cells=6
-
-        # Coordinates to integers
-        x = cp.arange(xcells)
-        y = cp.arange(ycells)
-        z = cp.arange(zcells)
-        ix, iy, iz = cp.meshgrid(x, y, z, indexing='ij')
-        coords_all = cp.stack([ix.ravel(), iy.ravel(), iz.ravel()], axis=1)
+        volume = self.grid_space ** 3
+        factor = 1.66 / volume
 
         for start in range(0, N, chunk_size):
             end = min(start + chunk_size, N)
-            coords = coords_all[start:end]
+            self.densities[start:end] = mass_flat[start:end] * factor
 
-            # Neighbor expanding masses
-            coords_exp = coords[:, None, :] + neighbor_offsets[None, :, :]
-            coords_exp %= cp.array([xcells, ycells, zcells])
-
-            xi, yi, zi = coords_exp[:, :, 0], coords_exp[:, :, 1], coords_exp[:, :, 2]
-            neighbor_masses = mass_grid[xi, yi, zi]
-
-            total_mass = cp.sum(neighbor_masses, axis=1)
-            volume = M * (self.grid_space ** 3)
-            densities = total_mass / volume * 1.66
-
-            self.densities[start:end] = densities
 
 
 class bubble():
@@ -414,7 +380,7 @@ class bubble():
             #x, y, z = grid_coordinates[i][:]
             x, y, z = index_to_coord(i, grid_space, ycells, zcells)
             
-            if box_densities[i] < 0.5:
+            if box_densities[i] < 0.6:
                 self.total_atoms += 1
                 #self.total_residues += 1
                 x += grid_space/2
@@ -453,13 +419,13 @@ def load_npz_to_gpu(npz_file):
 def main():
 
     pdb_filename = sys.argv[1]
-    grid_space = 1
+    grid_space = 10
     
     
     start_time = time.time()
     pdb = PDB(pdb_filename)
-    pdb.read()
-    #pdb.read_box()
+    #pdb.read()
+    pdb.read_box()
     end_time = time.time()
     print("PDB reading time: " + str(end_time - start_time) + "\n")
     #pdb.read_pdb_parallel()
@@ -467,7 +433,7 @@ def main():
 
     if pdb.box:
         print("Box information found. Coordinates will be reshaped to orthorombic.")
-        pdb.box.reshape_atoms_to_orthorombic(pdb.coords)
+        #pdb.box.reshape_atoms_to_orthorombic(pdb.coords)
         #output_name = pdb_filename.split(".")[:-1]
         #output_name = "".join(output_name) + "_wrapped.pdb"
         #pdb.write(output_name)
@@ -486,7 +452,7 @@ def main():
     end_time = time.time()
     print("Box wrapping time: " + str(end_time - start_time) + " seconds\n")
 
-    #pdb.resnames, pdb.coords, pdb.masses = load_npz_to_gpu("wrapped_data.npz")
+    pdb.resnames, pdb.coords, pdb.masses = load_npz_to_gpu("wrapped_data.npz")
     start_time = time.time()
     box_grid.initialize_cells_cuda()
     end_time = time.time()
