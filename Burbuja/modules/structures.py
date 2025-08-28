@@ -22,6 +22,8 @@ class Grid():
     """
     approx_grid_space: float = field(default=0.1)
     boundaries: np.ndarray = field(factory=lambda: np.zeros(3))
+    density_threshold: float = field(default=base.DEFAULT_DENSITY_THRESHOLD)
+    neighbor_cells: int = field(default=base.DEFAULT_NEIGHBOR_CELLS)
     grid_space_x: float = field(default=0.1)
     grid_space_y: float = field(default=0.1)
     grid_space_z: float = field(default=0.1)
@@ -136,7 +138,6 @@ class Grid():
                 else:
                     np.add.at(self.mass_array, ids, mw)
 
-
         return
 
     def calculate_densities(
@@ -161,7 +162,7 @@ class Grid():
             array_lib = np
             
         grid_space_mean = np.mean([self.grid_space_x, self.grid_space_y, self.grid_space_z])    
-        n_cells_to_spread = int(base.TOTAL_CELLS * round(0.1 / grid_space_mean))
+        n_cells_to_spread = int(self.neighbor_cells * round(0.1 / grid_space_mean))
         
         xcells, ycells, zcells = self.xcells, self.ycells, self.zcells
         grid_shape = (xcells, ycells, zcells)
@@ -275,7 +276,7 @@ class Grid():
             total_mass = array_lib.sum(neighbor_masses, axis=1)
             
             # Calculate densities for entire chunk
-            # TODO: what is 1.66? Ask Abraham and turn into a descriptive constant
+            # This converts the densities to units of g/L (1.66 factor)
             chunk_densities = total_mass / volume * 1.66
             
             # Store results
@@ -386,7 +387,7 @@ class Bubble():
         self.densities = box_densities.reshape((xcells, ycells, zcells))
         
         # Create bubble mask (vectorized operation)
-        bubble_mask = box_densities < base.DENSITY_THRESHOLD
+        bubble_mask = box_densities < self.density_threshold
         self.total_atoms = int(array_lib.sum(bubble_mask))
         
         if self.total_atoms == 0:

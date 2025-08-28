@@ -24,7 +24,9 @@ def burbuja(
         structure: str | mdtraj.Trajectory,
         grid_resolution: float = 0.1,
         use_cupy: bool = False,
-        use_float32=False
+        use_float32=False,
+        density_threshold: float = base.DEFAULT_DENSITY_THRESHOLD,
+        neighbor_cells: int = base.DEFAULT_NEIGHBOR_CELLS
         ) -> typing.List[structures.Bubble]:
     """
     Perform bubble detection and analysis on the structure.
@@ -68,7 +70,10 @@ def burbuja(
         lengths = base.reshape_atoms_to_orthorombic(coordinates, unitcell_vectors, frame_id)
         box_grid = structures.Grid(
             approx_grid_space=grid_resolution,
-            boundaries=lengths)
+            boundaries=lengths,
+            density_threshold=density_threshold,
+            neighbor_cells=neighbor_cells
+        )
         box_grid.initialize_cells(use_cupy=use_cupy, use_float32=use_float32)
         box_grid.calculate_cell_masses(coordinates, masses, n_atoms, frame_id, use_cupy=use_cupy)
         box_grid.calculate_densities(unitcell_vectors, frame_id=frame_id, use_cupy=use_cupy)
@@ -80,17 +85,21 @@ def has_bubble(
         structure: mdtraj.Trajectory,
         grid_resolution: float = 0.1,
         use_cupy: bool = False,
-        dx_filename_base: str | None = None
+        dx_filename_base: str | None = None,
+        density_threshold: float = base.DEFAULT_DENSITY_THRESHOLD,
+        minimum_bubble_fraction: float = base.DEFAULT_MINIMUM_BUBBLE_FRACTION,
+        neighbor_cells: int = base.DEFAULT_NEIGHBOR_CELLS
     ) -> bool:
     """
     Check if the structure has a bubble based on density threshold.
     """
-    bubbles = burbuja(structure, grid_resolution, use_cupy=use_cupy)
+    bubbles = burbuja(structure, grid_resolution, use_cupy=use_cupy,
+                      density_threshold=density_threshold,
+                      neighbor_cells=neighbor_cells)
     found_bubble = False
     
     for i, bubble in enumerate(bubbles):
-        #if bubble.total_bubble_volume > base.MINIMUM_BUBBLE_VOLUME:
-        if bubble.total_bubble_volume > base.MINIMUM_BUBBLE_FRACTION * bubble.total_system_volume:
+        if bubble.total_bubble_volume > minimum_bubble_fraction * bubble.total_system_volume:
             found_bubble = True
             if dx_filename_base is not None:
                 dx_filename = f"{dx_filename_base}_frame_{i}.dx"
@@ -139,6 +148,25 @@ def main():
         help="Enable detailed output, which includes bubble volumes per frame, "
         "and also DX files for bubble visualization. Default: False.",
         action="store_true")
+    argparser.add_argument(
+        "-D", "--density_threshold", dest="density_threshold",
+        metavar="DENSITY_THRESHOLD", type=float, default=base.DEFAULT_DENSITY_THRESHOLD,
+        help="Density threshold for void detection. If the neighbor-average density "
+        f"is below this threshold, the cell is assumed to be a void. "
+        f"Default: {base.DEFAULT_DENSITY_THRESHOLD} g/L.")
+    argparser.add_argument(
+        "-m", "--minimum_bubble_fraction", dest="minimum_bubble_fraction",
+        metavar="MINIMUM_BUBBLE_FRACTION", type=float, 
+        default=base.DEFAULT_MINIMUM_BUBBLE_FRACTION,
+        help="Minimum bubble fraction for detection. If the proportion of cells "
+        "considered to be voids is below this value, then a bubble is assumed to "
+        f"exist within this system. Default: {base.DEFAULT_MINIMUM_BUBBLE_FRACTION}.")
+    argparser.add_argument(
+        "-n", "--neighbor_cells", dest="neighbor_cells",
+        metavar="NEIGHBOR_CELLS", type=int, default=base.DEFAULT_NEIGHBOR_CELLS,
+        help="The distance (in number of cells) from a central cell to average "
+        f"over the density. Default: {base.DEFAULT_NEIGHBOR_CELLS}.")
+
     args = argparser.parse_args()
     args = vars(args)
     structure_file = pathlib.Path(args["structure_file"])
@@ -146,6 +174,9 @@ def main():
     grid_resolution = args["grid_resolution"]
     use_cupy = args["use_cupy"]
     detailed_output = args["detailed_output"]
+    density_threshold = args["density_threshold"]
+    minimum_bubble_fraction = args["minimum_bubble_fraction"]
+    neighbor_cells = args["neighbor_cells"]
 
     if topology_file is None:
         structure = str(structure_file)
@@ -159,7 +190,10 @@ def main():
     
     time_start = time.time()
     has_bubble_result = has_bubble(structure, grid_resolution, use_cupy=use_cupy,
-                                   dx_filename_base=dx_filename_base)
+                                   dx_filename_base=dx_filename_base, 
+                                   density_threshold=density_threshold,
+                                   minimum_bubble_fraction=minimum_bubble_fraction,
+                                   neighbor_cells=neighbor_cells)
     time_end = time.time()
     elapsed_time = time_end - time_start
     print(f"Bubble detection completed in {elapsed_time:.2f} seconds.")

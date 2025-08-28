@@ -7,10 +7,9 @@ Base functions and constants for Burbuja.
 import numpy as np
 import mdtraj
 
-DENSITY_THRESHOLD = 0.25 #0.01  # Density threshold for bubble detection
-#MINIMUM_BUBBLE_VOLUME = 1.5  # Minimum volume for a bubble to be considered significant
-MINIMUM_BUBBLE_FRACTION = 0.005  # Minimum fraction of the total system volume for a bubble to be considered significant
-TOTAL_CELLS = 4
+DEFAULT_DENSITY_THRESHOLD = 0.25 # Density threshold for bubble detection
+DEFAULT_MINIMUM_BUBBLE_FRACTION = 0.005  # Minimum fraction of the total system volume for a bubble to be considered significant
+DEFAULT_NEIGHBOR_CELLS = 4
 
 def reshape_atoms_to_orthorombic(
         coordinates: np.ndarray,
