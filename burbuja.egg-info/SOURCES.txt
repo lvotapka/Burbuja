@@ -11,6 +11,10 @@ Burbuja/modules/base.py
 Burbuja/modules/parse.py
 Burbuja/modules/structures.py
 Burbuja/tests/__init__.py
+<<<<<<< HEAD
+=======
+Burbuja/tests/test_compare.py
+>>>>>>> memory_fix2
 Burbuja/tests/test_systems.py
 burbuja.egg-info/PKG-INFO
 burbuja.egg-info/SOURCES.txt

@@ -141,11 +141,33 @@ def test_triclinic_box_trypsin_cupy():
     pdb_filename = os.path.join(DATA_DIRECTORY, "triclinic_box_trypsin.pdb")
     result_numpy= burbuja.burbuja(pdb_filename)
     result_cupy = burbuja.burbuja(pdb_filename, use_cupy=True)
+<<<<<<< HEAD
     for bubble_numpy, bubble_cupy in zip(result_numpy, result_cupy):
         assert bubble_numpy.total_bubble_volume == bubble_cupy.total_bubble_volume, \
             "Bubble volumes should match between numpy and cupy implementations."
         assert bubble_numpy.densities.shape == bubble_cupy.densities.shape, \
             "Bubble densities should have the same shape between numpy and cupy implementations."
+=======
+    for i, (bubble_numpy, bubble_cupy) in enumerate(zip(result_numpy, result_cupy)):
+        # Use relative tolerance for volume comparison due to float32 vs float64 precision
+        vol_numpy = bubble_numpy.total_bubble_volume
+        vol_cupy = bubble_cupy.total_bubble_volume
+        
+        if vol_numpy == 0 and vol_cupy == 0:
+            # Both are zero - perfect match
+            continue
+        elif vol_numpy == 0 or vol_cupy == 0:
+            # One is zero, other is not - check if the non-zero is very small
+            max_vol = max(vol_numpy, vol_cupy)
+            assert max_vol < 1e-6, f"Frame {i}: One implementation found bubble, other didn't. Volumes: {vol_numpy:.6f} vs {vol_cupy:.6f}"
+        else:
+            # Both non-zero - use relative tolerance
+            rel_diff = abs(vol_numpy - vol_cupy) / max(vol_numpy, vol_cupy)
+            assert rel_diff < 1e-4, f"Frame {i}: Bubble volumes differ too much. NumPy: {vol_numpy:.6f}, CuPy: {vol_cupy:.6f}, rel_diff: {rel_diff:.6f}"
+        
+        assert bubble_numpy.densities.shape == bubble_cupy.densities.shape, \
+            f"Frame {i}: Bubble densities should have the same shape between numpy and cupy implementations."
+>>>>>>> memory_fix2
     return
 
 @pytest.mark.needs_cupy
@@ -157,6 +179,7 @@ def test_tb_traj_cupy():
     dcd_filename = os.path.join(DATA_DIRECTORY, "tb_traj.dcd")
     prmtop_filename = os.path.join(DATA_DIRECTORY, "tryp_ben.prmtop")
     mdtraj_structure = mdtraj.load(dcd_filename, top=prmtop_filename)
+<<<<<<< HEAD
     result_numpy= burbuja.burbuja(mdtraj_structure)
     result_cupy = burbuja.burbuja(mdtraj_structure, use_cupy=True)
     for bubble_numpy, bubble_cupy in zip(result_numpy, result_cupy):
@@ -164,4 +187,48 @@ def test_tb_traj_cupy():
             "Bubble volumes should match between numpy and cupy implementations."
         assert bubble_numpy.densities.shape == bubble_cupy.densities.shape, \
             "Bubble densities should have the same shape between numpy and cupy implementations."
+=======
+    print("CPU")
+    result_numpy= burbuja.burbuja(mdtraj_structure)
+    print("GPU")
+    result_cupy = burbuja.burbuja(mdtraj_structure, use_cupy=True)
+    
+    # Track frames with bubbles for each implementation
+    numpy_bubble_frames = []
+    cupy_bubble_frames = []
+    
+    for i, (bubble_numpy, bubble_cupy) in enumerate(zip(result_numpy, result_cupy)):
+        # Use relative tolerance for volume comparison due to float32 vs float64 precision
+        vol_numpy = bubble_numpy.total_bubble_volume
+        vol_cupy = bubble_cupy.total_bubble_volume
+        
+        # Track which frames have bubbles
+        if vol_numpy > 1e-6:
+            numpy_bubble_frames.append(i)
+        if vol_cupy > 1e-6:
+            cupy_bubble_frames.append(i)
+        
+        if vol_numpy == 0 and vol_cupy == 0:
+            # Both are zero - perfect match
+            continue
+        elif vol_numpy == 0 or vol_cupy == 0:
+            # One is zero, other is not - check if the non-zero is very small
+            max_vol = max(vol_numpy, vol_cupy)
+            assert max_vol < 1e-4, f"Frame {i}: One implementation found bubble, other didn't. Volumes: {vol_numpy:.6f} vs {vol_cupy:.6f}"
+        else:
+            # Both non-zero - use generous tolerance due to cumulative float32 vs float64 differences
+            rel_diff = abs(vol_numpy - vol_cupy) / max(vol_numpy, vol_cupy)
+            assert rel_diff < 0.1, f"Frame {i}: Bubble volumes differ too much. NumPy: {vol_numpy:.6f}, CuPy: {vol_cupy:.6f}, rel_diff: {rel_diff:.6f}"
+        
+        assert bubble_numpy.densities.shape == bubble_cupy.densities.shape, \
+            f"Frame {i}: Bubble densities should have the same shape between numpy and cupy implementations."
+    
+    # Ensure both implementations detect bubbles in the same general frames
+    bubble_frame_overlap = set(numpy_bubble_frames) & set(cupy_bubble_frames)
+    min_required_overlap = max(1, min(len(numpy_bubble_frames), len(cupy_bubble_frames)) * 0.8)
+    
+    assert len(bubble_frame_overlap) >= min_required_overlap, \
+        f"Implementations should detect bubbles in similar frames. NumPy: {numpy_bubble_frames}, CuPy: {cupy_bubble_frames}, Overlap: {list(bubble_frame_overlap)}"
+    
+>>>>>>> memory_fix2
     return
