@@ -1,7 +1,2 @@
-deprecated/
-burbuja.egg-info/
 bubble_final_version.code-workspace
-build/
-__pycache__/
-burbuja/
 .pytest_cache/
