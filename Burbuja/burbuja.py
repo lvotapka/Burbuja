@@ -38,12 +38,8 @@ def burbuja(
     if isinstance(structure, str):
         a, b, c, alpha, beta, gamma = parse.get_box_information_from_pdb_file(structure)
         n_frames, n_atoms = parse.get_num_frames_and_atoms_from_pdb_file(structure)
-<<<<<<< HEAD
-        coordinates = np.zeros((n_frames, n_atoms, 3), dtype=np.float32)
-        masses = np.zeros(n_atoms, dtype=np.float32)
-=======
         coordinates = np.zeros((n_frames, n_atoms, 3), dtype=mydtype)
->>>>>>> memory_fix2
+        masses = np.zeros(n_atoms, dtype=mydtype)
         unitcell_vectors0 = np.array([
             [a, b * np.cos(gamma), c * np.cos(beta)],
             [0, b * np.sin(gamma), c * (np.cos(alpha) - np.cos(beta) * np.cos(gamma)) / np.sin(gamma)],
@@ -77,18 +73,7 @@ def burbuja(
         box_grid = structures.Grid(
             approx_grid_space=grid_resolution,
             boundaries=lengths)
-<<<<<<< HEAD
-        print("Initializing grid...")
-        start_time = time.time()
-        box_grid.initialize_cells(use_cupy=use_cupy)
-        print("Grid initialized in {:.2f} seconds.".format(time.time() - start_time))
-        print("")
-
-        print("Calculating cell masses...")
-        start_time = time.time()
-=======
         box_grid.initialize_cells(use_cupy=use_cupy, use_float32=use_float32)
->>>>>>> memory_fix2
         box_grid.calculate_cell_masses(coordinates, masses, n_atoms, frame_id, use_cupy=use_cupy)
         print("Cell masses calculated in {:.2f} seconds.".format(time.time() - start_time))
         box_grid.calculate_densities(unitcell_vectors, frame_id=frame_id, use_cupy=use_cupy)

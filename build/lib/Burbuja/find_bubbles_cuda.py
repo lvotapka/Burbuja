@@ -242,22 +242,12 @@ class grid():
         L_x, L_y, L_z = self.boundaries
         spacing = self.grid_space
 
-<<<<<<< HEAD
-        
-
-=======
->>>>>>> memory_fix2
         # Compute grid dimensions
         self.xcells = int((L_x + spacing) / spacing)
         self.ycells = int((L_y + spacing) / spacing)
         self.zcells = int((L_z + spacing) / spacing)
         total_coordinates = self.xcells * self.ycells * self.zcells
 
-<<<<<<< HEAD
-        #print("total coordinates", total_coordinates)
-
-=======
->>>>>>> memory_fix2
         # Only allocate what is strictly necessary
         self.mass_array = cp.zeros(total_coordinates, dtype=cp.float32)
         self.densities = cp.zeros(total_coordinates, dtype=cp.float32)
@@ -420,11 +410,7 @@ class bubble():
             #x, y, z = grid_coordinates[i][:]
             x, y, z = index_to_coord(i, grid_space, ycells, zcells)
             
-<<<<<<< HEAD
-            if box_densities[i] < 0.5:
-=======
             if box_densities[i] < 0.6:
->>>>>>> memory_fix2
                 self.total_atoms += 1
                 #self.total_residues += 1
                 x += grid_space/2

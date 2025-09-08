@@ -35,10 +35,7 @@ class Grid():
     def initialize_cells(
             self, 
             use_cupy=False,
-<<<<<<< HEAD
-=======
             use_float32=False
->>>>>>> memory_fix2
             ) -> None:
         """
         Assign the number of cells in each direction based on the
@@ -58,56 +55,11 @@ class Grid():
         self.grid_space_y = L_y / (self.ycells - 1)
         self.grid_space_z = L_z / (self.zcells - 1)
         total_coordinates = self.xcells * self.ycells * self.zcells
-<<<<<<< HEAD
-
-
-        #if use_cupy:
-        #    import cupy as cp
-        #    self.mass_array = cp.zeros(total_coordinates, dtype=cp.float32)
-        #    self.densities = cp.zeros(total_coordinates, dtype=cp.float32)
-
-        #else:
-        self.mass_array = np.zeros(total_coordinates)
-        self.densities = np.zeros(total_coordinates)
-
-        return
-
-
-    def apply_boundaries_to_protein(
-            self, 
-            structure: mdtraj.Trajectory,
-            ) -> None:
-
-        """
-        Wrap all atoms within the boundaries of the box.
-        """
-        # TODO: don't use this! It's wrong - use instead a procedure like
-        #  base.reshape_atoms_to_orthorombic() or see if this method can be
-        #  left out entirely.
-        L_x, L_y, L_z = self.boundaries[:]
-        for i in range(structure.n_frames):
-            for j in range(structure.n_atoms):
-                while structure.xyz[i,j,0] > L_x:
-                    structure.xyz[i,j,0] -= L_x
-                while structure.xyz[i,j,0] < 0:
-                    structure.xyz[i,j,0] += L_x
-
-                while structure.xyz[i,j,1] > L_y:
-                    structure.xyz[i,j,1] -= L_y
-                while structure.xyz[i,j,1] < 0:
-                    structure.xyz[i,j,1] += L_y
-
-                while structure.xyz[i,j,2] > L_z:
-                    structure.xyz[i,j,2] -= L_z
-                while structure.xyz[i,j,2] < 0:
-                    structure.xyz[i,j,2] += L_z
-=======
         self.total_system_volume = L_x * L_y * L_z
         # Use float32 for CPU if requested (for precision comparison testing)
         dtype = np.float32 if use_float32 else np.float64
         self.mass_array = np.zeros(total_coordinates, dtype=dtype)
         self.densities = np.zeros(total_coordinates, dtype=dtype)
->>>>>>> memory_fix2
         return
 
     def calculate_cell_masses(
@@ -116,15 +68,9 @@ class Grid():
             mass_list: list,
             n_atoms: int,
             frame_id: int = 0,
-<<<<<<< HEAD
-            chunk_size: int = 5000,
-            use_cupy: bool = False,
-            store_atomic_information: bool = False
-=======
             chunk_size: int = 1000,
             use_cupy: bool = False,
             use_float32: bool = False
->>>>>>> memory_fix2
             ) -> None:
         """
         Calculate the mass contained within each cell of the grid.
@@ -166,15 +112,8 @@ class Grid():
                 assert (yi_w < ycells).all(), "yi_w contains indices >= ycells"
                 assert (zi_w < zcells).all(), "zi_w contains indices >= zcells"
                 ids = xi_w * ycells * zcells + yi_w * zcells + zi_w
-<<<<<<< HEAD
-                #if use_cupy:
-                #    cp.add.at(self.mass_array, ids, mw)
-                #else:
-                np.add.at(self.mass_array, ids, mw)
-=======
                 np.add.at(self.mass_array, ids, mw)
 
->>>>>>> memory_fix2
 
         return
 
@@ -205,36 +144,6 @@ class Grid():
         xcells, ycells, zcells = self.xcells, self.ycells, self.zcells
         grid_shape = (xcells, ycells, zcells)
         N = xcells * ycells * zcells
-<<<<<<< HEAD
-
-        mass_grid = self.mass_array.reshape(grid_shape)
-
-        #if use_cupy:
-        #    self.densities = cp.zeros(N, dtype=cp.float32)
-        #    # Neighbors
-        #    neighbor_range = cp.arange(-n_cells_to_spread, n_cells_to_spread + 1)
-        #    dx, dy, dz = cp.meshgrid(neighbor_range, neighbor_range, neighbor_range, indexing='ij')
-        #    neighbor_offsets_box = cp.stack([dx.ravel(), dy.ravel(), dz.ravel()], axis=1)
-        #    neighbor_offsets_dist = cp.linalg.norm(neighbor_offsets_box, axis=1)
-        #    neighbor_offsets_within_dist = neighbor_offsets_dist <= n_cells_to_spread
-        #    neighbor_offsets = neighbor_offsets_box[neighbor_offsets_within_dist]
-        #    M = neighbor_offsets.shape[0]
-#
-        #    # Coordinates to integers
-        #    x = cp.arange(xcells)
-        #    y = cp.arange(ycells)
-        #    z = cp.arange(zcells)
-        #    ix, iy, iz = cp.meshgrid(x, y, z, indexing='ij')
-        #    coords_all = cp.stack([ix.ravel(), iy.ravel(), iz.ravel()], axis=1)
-        #else:
-        self.densities = np.zeros(N)
-        
-        # Neighbors
-        neighbor_range = np.arange(-n_cells_to_spread, n_cells_to_spread + 1)
-        dx, dy, dz = np.meshgrid(neighbor_range, neighbor_range, neighbor_range, indexing='ij')
-        neighbor_offsets_box = np.stack([dx.ravel(), dy.ravel(), dz.ravel()], axis=1)
-        neighbor_offsets_dist = np.linalg.norm(neighbor_offsets_box, axis=1)
-=======
         
         # Transfer mass array to GPU if using CuPy
         if use_cupy:
@@ -254,28 +163,10 @@ class Grid():
         neighbor_offsets_box = array_lib.stack([dx.ravel(), dy.ravel(), dz.ravel()], axis=1)
         neighbor_offsets_dist = array_lib.linalg.norm(neighbor_offsets_box, axis=1)
         
->>>>>>> memory_fix2
         neighbor_offsets_within_dist = neighbor_offsets_dist <= n_cells_to_spread
         neighbor_offsets = neighbor_offsets_box[neighbor_offsets_within_dist]
         M = neighbor_offsets.shape[0]
         
-<<<<<<< HEAD
-        # Coordinates to integers
-        x = np.arange(xcells)
-        y = np.arange(ycells)
-        z = np.arange(zcells)
-        ix, iy, iz = np.meshgrid(x, y, z, indexing='ij')
-        coords_all = np.stack([ix.ravel(), iy.ravel(), iz.ravel()], axis=1)
-
-        for start in range(0, N, chunk_size):
-            end = min(start + chunk_size, N)
-            if use_cupy:
-                coords = cp.asarray(coords_all[start:end, :], dtype=cp.float32)
-            else:
-                coords = coords_all[start:end]
-
-            # Neighbor expanding masses
-=======
         # Get image offsets once
         if use_cupy:
             boundaries_gpu = cp.asarray(self.boundaries)
@@ -314,7 +205,6 @@ class Grid():
             
             # Expand coordinates with ALL neighbor offsets at once (key optimization)
             # Shape: (current_chunk_size, M, 3)
->>>>>>> memory_fix2
             coords_exp = coords[:, None, :] + neighbor_offsets[None, :, :]
             
             # Apply periodic boundary conditions (vectorized operations)

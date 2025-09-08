@@ -141,13 +141,6 @@ def test_triclinic_box_trypsin_cupy():
     pdb_filename = os.path.join(DATA_DIRECTORY, "triclinic_box_trypsin.pdb")
     result_numpy= burbuja.burbuja(pdb_filename)
     result_cupy = burbuja.burbuja(pdb_filename, use_cupy=True)
-<<<<<<< HEAD
-    for bubble_numpy, bubble_cupy in zip(result_numpy, result_cupy):
-        assert bubble_numpy.total_bubble_volume == bubble_cupy.total_bubble_volume, \
-            "Bubble volumes should match between numpy and cupy implementations."
-        assert bubble_numpy.densities.shape == bubble_cupy.densities.shape, \
-            "Bubble densities should have the same shape between numpy and cupy implementations."
-=======
     for i, (bubble_numpy, bubble_cupy) in enumerate(zip(result_numpy, result_cupy)):
         # Use relative tolerance for volume comparison due to float32 vs float64 precision
         vol_numpy = bubble_numpy.total_bubble_volume
@@ -167,7 +160,6 @@ def test_triclinic_box_trypsin_cupy():
         
         assert bubble_numpy.densities.shape == bubble_cupy.densities.shape, \
             f"Frame {i}: Bubble densities should have the same shape between numpy and cupy implementations."
->>>>>>> memory_fix2
     return
 
 @pytest.mark.needs_cupy
@@ -179,15 +171,6 @@ def test_tb_traj_cupy():
     dcd_filename = os.path.join(DATA_DIRECTORY, "tb_traj.dcd")
     prmtop_filename = os.path.join(DATA_DIRECTORY, "tryp_ben.prmtop")
     mdtraj_structure = mdtraj.load(dcd_filename, top=prmtop_filename)
-<<<<<<< HEAD
-    result_numpy= burbuja.burbuja(mdtraj_structure)
-    result_cupy = burbuja.burbuja(mdtraj_structure, use_cupy=True)
-    for bubble_numpy, bubble_cupy in zip(result_numpy, result_cupy):
-        assert bubble_numpy.total_bubble_volume == bubble_cupy.total_bubble_volume, \
-            "Bubble volumes should match between numpy and cupy implementations."
-        assert bubble_numpy.densities.shape == bubble_cupy.densities.shape, \
-            "Bubble densities should have the same shape between numpy and cupy implementations."
-=======
     print("CPU")
     result_numpy= burbuja.burbuja(mdtraj_structure)
     print("GPU")
@@ -230,5 +213,4 @@ def test_tb_traj_cupy():
     assert len(bubble_frame_overlap) >= min_required_overlap, \
         f"Implementations should detect bubbles in similar frames. NumPy: {numpy_bubble_frames}, CuPy: {cupy_bubble_frames}, Overlap: {list(bubble_frame_overlap)}"
     
->>>>>>> memory_fix2
     return
