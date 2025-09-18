@@ -197,21 +197,33 @@ def main():
         description="Automatically detect bubbles and vapor pockets and local "
             "voids within molecular dynamics simulation structures making use "
             "of explicit solvent.")
-    argparser.add_argument("structure_file", help="Path to structure file (e.g., PDB, DCD+topology).")
-    argparser.add_argument("-t", "--topology", default=None,
-                   help="Optional topology file (e.g., .prmtop, .psf) for trajectory formats.")
-    argparser.add_argument("-r", "--grid-resolution", type=float, default=0.1,
-                   help="Grid spacing in nm/Å (match your code’s units).")
-    argparser.add_argument("-c", "--use-cupy", action="store_true",
-                   help="Enable GPU acceleration via CuPy, if available.")
-    argparser.add_argument("-d", "--detailed-output", action="store_true",
-                   help="Write .dx files for visualization.")
-    argparser.add_argument("--density-threshold", type=float, default=0.2,
-                   help="Density threshold for bubble detection.")
-    argparser.add_argument("--minimum-bubble-fraction", type=float, default=0.001,
-                   help="Minimum fraction of low-density cells to count as a bubble.")
-    argparser.add_argument("-n", "--neighbor-cells", type=int, default=1,
-                   help="Connectivity radius (in grid cells) for clustering.")
+    argparser.add_argument(
+        "structure_file", 
+        help="Path to structure file (e.g., PDB, DCD, ...).")
+    argparser.add_argument(
+        "-t", "--topology", default=None,
+        help="Optional topology file (e.g., .prmtop, .psf) for trajectory formats.")
+    argparser.add_argument(
+        "-r", "--grid-resolution", type=float, default=0.1,
+        help="Grid spacing in nm.")
+    argparser.add_argument(
+        "-c", "--use-cupy", action="store_true",
+        help="Enable GPU acceleration via CuPy, if available.")
+    argparser.add_argument(
+        "-d", "--detailed-output", action="store_true",
+        help="Write .dx files for visualization.")
+    argparser.add_argument(
+        "--density-threshold", type=float, default=base.DEFAULT_DENSITY_THRESHOLD,
+        help="Density threshold for bubble detection (g/L). "
+        f"Default: {base.DEFAULT_DENSITY_THRESHOLD}")
+    argparser.add_argument(
+        "--minimum-bubble-fraction", type=float, default=base.DEFAULT_MINIMUM_BUBBLE_FRACTION,
+        help="Minimum fraction of low-density cells to count as a bubble."
+        f" Default: {base.DEFAULT_MINIMUM_BUBBLE_FRACTION}")
+    argparser.add_argument(
+        "-n", "--neighbor-cells", type=int, default=base.DEFAULT_NEIGHBOR_CELLS,
+        help="Connectivity radius (in grid cells) for clustering. "
+        f"Default: {base.DEFAULT_NEIGHBOR_CELLS}.")
     args = argparser.parse_args()
     args = vars(args)
     structure_file = pathlib.Path(args["structure_file"])
