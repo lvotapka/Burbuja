@@ -224,6 +224,10 @@ def main():
         "-n", "--neighbor-cells", type=int, default=base.DEFAULT_NEIGHBOR_CELLS,
         help="Connectivity radius (in grid cells) for clustering. "
         f"Default: {base.DEFAULT_NEIGHBOR_CELLS}.")
+    argparser.add_argument(
+        "--float_type", choices=["float32", "float64"], default="float32",
+        help="Precision for calculations (float32 occupies less memory, float64 "
+            "is more precise). Default: float32.")
     args = argparser.parse_args()
     args = vars(args)
     structure_file = pathlib.Path(args["structure_file"])
