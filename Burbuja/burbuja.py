@@ -76,18 +76,22 @@ def burbuja(
         masses = np.zeros(n_atoms, dtype=mydtype)
         unitcell_vectors0 = np.array([
             [a, b * np.cos(gamma), c * np.cos(beta)],
-            [0, b * np.sin(gamma), c * (np.cos(alpha) - np.cos(beta) * np.cos(gamma)) / np.sin(gamma)],
-            [0, 0, c * np.sqrt(1 - np.cos(beta)**2 - ((np.cos(alpha) - np.cos(beta) * np.cos(gamma)) / np.sin(gamma))**2)]],
+            [0, b * np.sin(gamma), c * (np.cos(alpha) - np.cos(beta) * np.cos(gamma)) \
+                / np.sin(gamma)],
+            [0, 0, c * np.sqrt(1 - np.cos(beta)**2 - ((np.cos(alpha) - np.cos(beta) \
+                * np.cos(gamma)) / np.sin(gamma))**2)]],
             dtype=mydtype)
         unitcell_vectors0 = np.transpose(unitcell_vectors0, axes=(1, 0))
         unitcell_vectors = np.repeat(unitcell_vectors0[np.newaxis, :, :], n_frames, axis=0)
         if n_frames > 1:
-            print("Warning: The PDB file contains multiple frames, and unit cell vectors are "
-                  "assumed to be constant across frames. If the unit cell vectors changed during "
-                  "the generation of this trajectory, you must load a different trajectory file "
-                  "format, such as a DCD file, and provide the topology file to Burbuja in order "
-                  "for the correct unit cell vectors to be used for each frame.")
-        parse.fill_out_coordinates_and_masses(structure, coordinates, masses, n_frames, n_atoms)
+            print("Warning: The PDB file contains multiple frames, and unit cell vectors "\
+                  "are assumed to be constant across frames. If the unit cell vectors "\
+                  "changed during the generation of this trajectory, you must load a "\
+                  "different trajectory file format, such as a DCD file, and provide the "\
+                  "topology file to Burbuja in order for the correct unit cell vectors "\
+                  "to be used for each frame.")
+        parse.fill_out_coordinates_and_masses(
+            structure, coordinates, masses, n_frames, n_atoms)
         
     else:
         n_frames = structure.n_frames
@@ -107,10 +111,12 @@ def burbuja(
             density_threshold=density_threshold,
             neighbor_cells=neighbor_cells
         )
-        box_grid.initialize_cells(use_cupy=use_cupy, use_float32=use_float32)
-        box_grid.calculate_cell_masses(coordinates, masses, n_atoms, frame_id, use_cupy=use_cupy)
-        box_grid.calculate_densities(unitcell_vectors, frame_id=frame_id, use_cupy=use_cupy)
-        bubble = box_grid.generate_bubble_object(use_cupy=use_cupy, use_float32=True)
+        box_grid.initialize_cells(use_float32=use_float32)
+        box_grid.calculate_cell_masses(
+            coordinates, masses, n_atoms, frame_id, use_float32=use_float32)
+        box_grid.calculate_densities(
+            unitcell_vectors, frame_id=frame_id, use_cupy=use_cupy, use_float32=use_float32)
+        bubble = box_grid.generate_bubble_object(use_float32=use_float32)
         bubbles.append(bubble)
     return bubbles
 
@@ -118,6 +124,7 @@ def has_bubble(
         structure: mdtraj.Trajectory,
         grid_resolution: float = 0.1,
         use_cupy: bool = False,
+        use_float32: bool = True,
         dx_filename_base: str | None = None,
         density_threshold: float = base.DEFAULT_DENSITY_THRESHOLD,
         minimum_bubble_fraction: float = base.DEFAULT_MINIMUM_BUBBLE_FRACTION,
@@ -139,6 +146,8 @@ def has_bubble(
             Grid spacing in nanometers. Default is 0.1.
         use_cupy (bool, optional):
             Use CuPy for GPU acceleration. Default is False.
+        use_float32 (bool, optional):
+            Use float32 precision for calculations. Default is False.
         dx_filename_base (str, optional):
             If provided, write DX files for each frame with a bubble.
             Default is None.
@@ -162,17 +171,20 @@ def has_bubble(
         >>> print("Contains bubble?", contains_bubble)
     """
     bubbles = burbuja(structure, grid_resolution, use_cupy=use_cupy,
+                      use_float32=use_float32,
                       density_threshold=density_threshold,
                       neighbor_cells=neighbor_cells)
     found_bubble = False
     
     for i, bubble in enumerate(bubbles):
-        if bubble.total_bubble_volume > minimum_bubble_fraction * bubble.total_system_volume:
+        if bubble.total_bubble_volume > minimum_bubble_fraction \
+                * bubble.total_system_volume:
             found_bubble = True
             if dx_filename_base is not None:
                 dx_filename = f"{dx_filename_base}_frame_{i}.dx"
                 bubble.write_bubble_dx(dx_filename)
-                print(f"Bubble detected with volume: {bubble.total_bubble_volume:.3f} nm^3. Frame: {i}. "
+                print(f"Bubble detected with volume: "
+                      f"{bubble.total_bubble_volume:.3f} nm^3. Frame: {i}. "
                     f"Bubble volume map file: {dx_filename}")
             else:
                 break
@@ -238,6 +250,7 @@ def main():
     density_threshold = args["density_threshold"]
     minimum_bubble_fraction = args["minimum_bubble_fraction"]
     neighbor_cells = args["neighbor_cells"]
+    use_float32 = args["float_type"] == "float32"
 
     if topology_file is None:
         structure = str(structure_file)
@@ -250,11 +263,11 @@ def main():
         dx_filename_base = None
 
     time_start = time.time()
-    has_bubble_result = has_bubble(structure, grid_resolution, use_cupy=use_cupy,
-                                    dx_filename_base=dx_filename_base, 
-                                    density_threshold=density_threshold,
-                                    minimum_bubble_fraction=minimum_bubble_fraction,
-                                    neighbor_cells=neighbor_cells)
+    has_bubble_result = has_bubble(
+        structure, grid_resolution, use_cupy=use_cupy, use_float32=use_float32, 
+        dx_filename_base=dx_filename_base, density_threshold=density_threshold,
+        minimum_bubble_fraction=minimum_bubble_fraction, 
+        neighbor_cells=neighbor_cells)
     time_end = time.time()
     elapsed_time = time_end - time_start
     print(f"Bubble detection completed in {elapsed_time:.2f} seconds.")
