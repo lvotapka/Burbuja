@@ -37,7 +37,7 @@ class Grid():
     
     def initialize_cells(
             self,
-            use_float32: bool = False
+            use_float32: bool = True
             ) -> None:
         """
         Initialize the grid cell arrays for mass and density.
@@ -76,13 +76,13 @@ class Grid():
             n_atoms: int,
             frame_id: int = 0,
             chunk_size: int = 1000,
-            use_float32: bool = False
+            use_float32: bool = True
             ) -> None:
         """
         Calculate the mass contained within each cell of the grid.
 
         Loops over all atoms and assigns their mass to the appropriate
-        grid cell, using either CPU or GPU arrays.
+        grid cell, using CPU arrays.
 
         Args:
             coordinates (np.ndarray): Atomic coordinates, shape (n_frames, n_atoms, 3).
@@ -139,7 +139,7 @@ class Grid():
             frame_id: int = 0,
             chunk_size: int = 1000,
             use_cupy: bool = False,
-            use_float32: bool = False
+            use_float32: bool = True
             ) -> None:
         """
         Calculate the densities in each cell of the grid.
@@ -179,6 +179,11 @@ class Grid():
             grid_shape_array = cp.asarray(grid_shape, dtype=cp.int32)
         else:
             grid_shape_array = np.array(grid_shape)
+
+        mass_array = self.mass_array
+        # Use float32 for CPU if requested (for precision comparison testing)
+        dtype = np.float32 if use_float32 else np.float64
+        self.densities = np.zeros(N, dtype=dtype)
         
         mass_array = self.mass_array
         # Use float32 for CPU if requested (for precision comparison testing)
@@ -297,7 +302,6 @@ class Grid():
                 self.densities[start:end] = cp.asnumpy(chunk_densities)
             else:
                 self.densities[start:end] = chunk_densities
-
             # Clean up large intermediate arrays to prevent memory buildup
             del coords_exp, xi, yi, zi, neighbor_masses, total_mass, chunk_densities, coords
             
@@ -307,7 +311,7 @@ class Grid():
 
     def generate_bubble_object(
             self,
-            use_float32: bool = False
+            use_float32: bool = True
             ) -> "Bubble":
         """
         Generate a Bubble object from the grid densities data.
@@ -394,13 +398,13 @@ class Bubble():
              grid_space_x: float,
              grid_space_y: float,
              grid_space_z: float,
-             use_float32: bool = False
+             use_float32: bool = True
              ) -> None:
         """
         Identify bubble regions where density is below the threshold.
 
         Populates the bubble_data mask and atom coordinates for the bubble.
-        Supports both CPU and GPU processing.
+        Supports CPU processing only.
 
         Args:
             xcells (int): Number of grid cells in x direction.
@@ -420,7 +424,6 @@ class Bubble():
         # Ensure densities are on CPU  
         if hasattr(box_densities, 'get'):  # Check if it's a CuPy array
             box_densities = box_densities.get()
-
         # Set precision for calculations
         float_dtype = np.float32 if use_float32 else np.float64
         
@@ -461,7 +464,6 @@ class Bubble():
         x_coords_cpu = x_coords
         y_coords_cpu = y_coords
         z_coords_cpu = z_coords
-
         # Generate PDB atom records (this part stays on CPU since it's string formatting)
         self.atoms = {}
         for i in range(self.total_atoms):
@@ -481,7 +483,6 @@ class Bubble():
         else:
             self.total_bubble_volume = self.total_atoms * grid_space_x * grid_space_y * grid_space_z
         
-        return
 
     def write_pdb(
             self,

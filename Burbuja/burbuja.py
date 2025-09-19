@@ -24,7 +24,7 @@ def burbuja(
         structure: str | mdtraj.Trajectory,
         grid_resolution: float = 0.1,
         use_cupy: bool = False,
-        use_float32: bool = False,
+        use_float32: bool = True,
         density_threshold: float = base.DEFAULT_DENSITY_THRESHOLD,
         neighbor_cells: int = base.DEFAULT_NEIGHBOR_CELLS
         ) -> typing.List[structures.Bubble]:
