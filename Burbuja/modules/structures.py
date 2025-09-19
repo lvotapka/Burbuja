@@ -447,11 +447,14 @@ class Bubble():
         iy = temp % ycells
         ix = temp // ycells
         
+        print("type(ix) =", type(ix))
+        print("type(grid_space_x) =", type(grid_space_x))
+
         # Calculate physical coordinates (vectorized) with controlled precision
-        x_coords = (ix * float_dtype(grid_space_x) + float_dtype(grid_space_x)/2).astype(float_dtype)
-        y_coords = (iy * float_dtype(grid_space_y) + float_dtype(grid_space_y)/2).astype(float_dtype)
-        z_coords = (iz * float_dtype(grid_space_z) + float_dtype(grid_space_z)/2).astype(float_dtype)
-    
+        x_coords = (ix * float_dtype(grid_space_x) + 0.5*float_dtype(grid_space_x)).astype(float_dtype)
+        y_coords = (iy * float_dtype(grid_space_y) + 0.5*float_dtype(grid_space_y)).astype(float_dtype)
+        z_coords = (iz * float_dtype(grid_space_z) + 0.5*float_dtype(grid_space_z)).astype(float_dtype)
+
         # Create bubble_data array
         self.bubble_data = array_lib.zeros((xcells, ycells, zcells), dtype=bool)
         self.bubble_data[ix, iy, iz] = True
