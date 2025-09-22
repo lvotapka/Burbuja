@@ -144,8 +144,8 @@ def fill_out_coordinates_and_masses(pdb_filename, coordinates, mass_list, n_fram
     Returns:
         list: List of atomic masses for all atoms in the file.
     """
-    
     with open(pdb_filename, 'r') as file:
+
         frame_id = 0
         atom_id = 0
         for line in file:
@@ -160,7 +160,6 @@ def fill_out_coordinates_and_masses(pdb_filename, coordinates, mass_list, n_fram
                     if mass == 0.0:
                         print(f"Warning: No mass found for atom {name_with_spaces} in frame {frame_id}. "
                               "Assuming mass of 0.0.")
-                        
                     mass_list[atom_id] = mass
                     atom_id += 1
                 if atom_id == n_atoms:
@@ -168,4 +167,4 @@ def fill_out_coordinates_and_masses(pdb_filename, coordinates, mass_list, n_fram
                     frame_id += 1
                     if frame_id == n_frames:
                         break
-    return mass_list
+    return

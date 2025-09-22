@@ -76,18 +76,22 @@ def burbuja(
         masses = np.zeros(n_atoms, dtype=mydtype)
         unitcell_vectors0 = np.array([
             [a, b * np.cos(gamma), c * np.cos(beta)],
-            [0, b * np.sin(gamma), c * (np.cos(alpha) - np.cos(beta) * np.cos(gamma)) / np.sin(gamma)],
-            [0, 0, c * np.sqrt(1 - np.cos(beta)**2 - ((np.cos(alpha) - np.cos(beta) * np.cos(gamma)) / np.sin(gamma))**2)]],
+            [0, b * np.sin(gamma), c * (np.cos(alpha) - np.cos(beta) * np.cos(gamma)) \
+                / np.sin(gamma)],
+            [0, 0, c * np.sqrt(1 - np.cos(beta)**2 - ((np.cos(alpha) - np.cos(beta) \
+                * np.cos(gamma)) / np.sin(gamma))**2)]],
             dtype=mydtype)
         unitcell_vectors0 = np.transpose(unitcell_vectors0, axes=(1, 0))
         unitcell_vectors = np.repeat(unitcell_vectors0[np.newaxis, :, :], n_frames, axis=0)
         if n_frames > 1:
-            print("Warning: The PDB file contains multiple frames, and unit cell vectors are "
-                  "assumed to be constant across frames. If the unit cell vectors changed during "
-                  "the generation of this trajectory, you must load a different trajectory file "
-                  "format, such as a DCD file, and provide the topology file to Burbuja in order "
-                  "for the correct unit cell vectors to be used for each frame.")
-        parse.fill_out_coordinates_and_masses(structure, coordinates, masses, n_frames, n_atoms)
+            print("Warning: The PDB file contains multiple frames, and unit cell vectors "\
+                  "are assumed to be constant across frames. If the unit cell vectors "\
+                  "changed during the generation of this trajectory, you must load a "\
+                  "different trajectory file format, such as a DCD file, and provide the "\
+                  "topology file to Burbuja in order for the correct unit cell vectors "\
+                  "to be used for each frame.")
+        parse.fill_out_coordinates_and_masses(
+            structure, coordinates, masses, n_frames, n_atoms)
         
     else:
         n_frames = structure.n_frames
@@ -108,8 +112,10 @@ def burbuja(
             neighbor_cells=neighbor_cells
         )
         box_grid.initialize_cells(use_float32=use_float32)
-        box_grid.calculate_cell_masses(coordinates, masses, n_atoms, frame_id, use_float32=use_float32)
-        box_grid.calculate_densities(unitcell_vectors, frame_id=frame_id, use_cupy=use_cupy, use_float32=use_float32)
+        box_grid.calculate_cell_masses(
+            coordinates, masses, n_atoms, frame_id, use_float32=use_float32)
+        box_grid.calculate_densities(
+            unitcell_vectors, frame_id=frame_id, use_cupy=use_cupy, use_float32=use_float32)
         bubble = box_grid.generate_bubble_object(use_float32=use_float32)
         bubbles.append(bubble)
     return bubbles
@@ -140,6 +146,8 @@ def has_bubble(
             Grid spacing in nanometers. Default is 0.1.
         use_cupy (bool, optional):
             Use CuPy for GPU acceleration. Default is False.
+        use_float32 (bool, optional):
+            Use float32 precision for calculations. Default is False.
         dx_filename_base (str, optional):
             If provided, write DX files for each frame with a bubble.
             Default is None.
@@ -169,16 +177,19 @@ def has_bubble(
     found_bubble = False
     
     for i, bubble in enumerate(bubbles):
-        if bubble.total_bubble_volume > minimum_bubble_fraction * bubble.total_system_volume:
+        if bubble.total_bubble_volume > minimum_bubble_fraction \
+                * bubble.total_system_volume:
             found_bubble = True
             if dx_filename_base is not None:
                 dx_filename = f"{dx_filename_base}_frame_{i}.dx"
                 bubble.write_bubble_dx(dx_filename)
-                print(f"Bubble detected with volume: {bubble.total_bubble_volume:.3f} nm^3. Frame: {i}. "
+                print(f"Bubble detected with volume: "
+                      f"{bubble.total_bubble_volume:.3f} nm^3. Frame: {i}. "
                     f"Bubble volume map file: {dx_filename}")
             else:
                 break
     return found_bubble
+
 
 def main():
     """
@@ -195,26 +206,40 @@ def main():
     -h/--help.
     """
     argparser = argparse.ArgumentParser(
-    description="Automatically detect bubbles and vapor pockets and local "
-        "voids within molecular dynamics simulation structures making use "
-        "of explicit solvent.")
-    argparser.add_argument("structure_file", help="Path to structure file (e.g., PDB, DCD+topology).")
-    argparser.add_argument("-t", "--topology", default=None,
-                   help="Optional topology file (e.g., .prmtop, .psf) for trajectory formats.")
-    argparser.add_argument("-r", "--grid-resolution", type=float, default=0.1,
-                   help="Grid spacing in nm/Å (match your code’s units).")
-    argparser.add_argument("-c", "--use-cupy", action="store_true",
-                   help="Enable GPU acceleration via CuPy, if available.")
-    argparser.add_argument("-d", "--detailed-output", action="store_true",
-                   help="Write .dx files for visualization.")
-    argparser.add_argument("--density-threshold", type=float, default=0.25,
-                   help="Density threshold for bubble detection.")
-    argparser.add_argument("--minimum-bubble-fraction", type=float, default=0.005,
-                   help="Minimum fraction of low-density cells to count as a bubble.")
-    argparser.add_argument("-n", "--neighbor-cells", type=int, default=4,
-                   help="Connectivity radius (in grid cells) for clustering.")
-    argparser.add_argument("--float_type", choices=["float32", "float64"], default="float32",
-                   help="Precision for calculations (float32 occupies less memory, float64 is more precise).")
+        description="Automatically detect bubbles and vapor pockets and local "
+            "voids within molecular dynamics simulation structures making use "
+            "of explicit solvent.")
+    argparser.add_argument(
+        "structure_file", 
+        help="Path to structure file (e.g., PDB, DCD, ...).")
+    argparser.add_argument(
+        "-t", "--topology", default=None,
+        help="Optional topology file (e.g., .prmtop, .psf) for trajectory formats.")
+    argparser.add_argument(
+        "-r", "--grid-resolution", type=float, default=0.1,
+        help="Grid spacing in nm.")
+    argparser.add_argument(
+        "-c", "--use-cupy", action="store_true",
+        help="Enable GPU acceleration via CuPy, if available.")
+    argparser.add_argument(
+        "-d", "--detailed-output", action="store_true",
+        help="Write .dx files for visualization.")
+    argparser.add_argument(
+        "--density-threshold", type=float, default=base.DEFAULT_DENSITY_THRESHOLD,
+        help="Density threshold for bubble detection (g/L). "
+        f"Default: {base.DEFAULT_DENSITY_THRESHOLD}")
+    argparser.add_argument(
+        "--minimum-bubble-fraction", type=float, default=base.DEFAULT_MINIMUM_BUBBLE_FRACTION,
+        help="Minimum fraction of low-density cells to count as a bubble."
+        f" Default: {base.DEFAULT_MINIMUM_BUBBLE_FRACTION}")
+    argparser.add_argument(
+        "-n", "--neighbor-cells", type=int, default=base.DEFAULT_NEIGHBOR_CELLS,
+        help="Connectivity radius (in grid cells) for clustering. "
+        f"Default: {base.DEFAULT_NEIGHBOR_CELLS}.")
+    argparser.add_argument(
+        "--float_type", choices=["float32", "float64"], default="float32",
+        help="Precision for calculations (float32 occupies less memory, float64 "
+            "is more precise). Default: float32.")
     args = argparser.parse_args()
     args = vars(args)
     structure_file = pathlib.Path(args["structure_file"])
@@ -238,11 +263,11 @@ def main():
         dx_filename_base = None
 
     time_start = time.time()
-    has_bubble_result = has_bubble(structure, grid_resolution, use_cupy=use_cupy,
-                                    use_float32=use_float32, dx_filename_base=dx_filename_base, 
-                                    density_threshold=density_threshold,
-                                    minimum_bubble_fraction=minimum_bubble_fraction,
-                                    neighbor_cells=neighbor_cells)
+    has_bubble_result = has_bubble(
+        structure, grid_resolution, use_cupy=use_cupy, use_float32=use_float32, 
+        dx_filename_base=dx_filename_base, density_threshold=density_threshold,
+        minimum_bubble_fraction=minimum_bubble_fraction, 
+        neighbor_cells=neighbor_cells)
     time_end = time.time()
     elapsed_time = time_end - time_start
     print(f"Bubble detection completed in {elapsed_time:.2f} seconds.")
