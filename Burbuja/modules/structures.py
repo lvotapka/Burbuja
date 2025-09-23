@@ -110,7 +110,8 @@ class Grid():
         for start in range(0, n_atoms, chunk_size):
             end = min(start + chunk_size, n_atoms)
             coords_batch = coordinates[frame_id, start:end, :]
-            masses_batch = mass_list[start:end]
+            mass_slice = mass_list[start:end]
+            masses_batch = np.array(mass_slice, dtype=np.float32)
             if use_cupy:
                 dtype = cp.float32 if use_float32 else cp.float64
                 coords = cp.asarray(coords_batch, dtype=dtype)
@@ -211,11 +212,6 @@ class Grid():
             self.densities = array_lib.zeros(N, dtype=dtype)
             grid_shape_array = np.array(grid_shape)
 
-        mass_array = self.mass_array
-        # Use float32 for CPU if requested (for precision comparison testing)
-        dtype = np.float32 if use_float32 else np.float64
-        self.densities = np.zeros(N, dtype=dtype)
-        
         mass_grid = mass_array.reshape(grid_shape)
         
         # Pre-compute neighbor offsets (once, on appropriate device)
@@ -314,8 +310,7 @@ class Grid():
             neighbor_masses = mass_grid[xi, yi, zi]
             total_mass = array_lib.sum(neighbor_masses, axis=1)
             
-            # Calculate densities for entire chunk
-            # TODO: what is 1.66? Ask Abraham and turn into a descriptive constant
+            # Calculate densities for entire chunk (g/L)
             chunk_densities = total_mass / volume * 1.66
             
             # Store results
