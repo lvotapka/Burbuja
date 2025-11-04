@@ -28,6 +28,9 @@ dependencies = [
     "pytest>=7.2",
 ]
 
+[project.scripts]
+burbuja = "burbuja.burbuja:main"
+
 # Update the urls once the hosting is set up.
 [project.urls]
 "Source" = "https://github.com/Abrahammc90/Burbuja.git"
@@ -70,7 +73,7 @@ burbuja = [
 ]
 
 [tool.versioningit]
-default-version = "1.0.0"
+default-version = "1.0.1"
 
 [tool.versioningit.format]
 distance = "{base_version}+{distance}.{vcs}{rev}"
@@ -82,7 +85,7 @@ distance-dirty = "{base_version}+{distance}.{vcs}{rev}.dirty"
 method = "git"  # <- The method name
 # Parameters to pass to the method:
 match = ["*"]
-default-tag = "1.0.0"
+default-tag = "1.0.1"
 
 [tool.versioningit.write]
 file = "burbuja/_version.py"

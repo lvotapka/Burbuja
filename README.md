@@ -43,16 +43,9 @@ mamba install cupy
 Next, simply install Burbuja. All remaining dependencies should be handled automatically:
 
 ```sh
-git clone https://github.com/Abrahammc90/Burbuja.git
-cd Burbuja
-python -m pip install .
+pip install burbuja
 ```
 
-One may then optionally run unit tests:
-
-```sh
-pytest
-```
 
 ## Example
 
@@ -60,14 +53,14 @@ One may try out the example systems in the Burbuja/examples/ subdirectory. Withi
 
 ```sh
 cd examples/
-python ~/Burbuja/Burbuja/burbuja.py trypsin_benzamidine_no_bubble.pdb
+burbuja trypsin_benzamidine_no_bubble.pdb
 ```
 
 Burbuja should indicate that no bubble was present in the structure. Next, try the structure that does contain a bubble:
 
 ```sh
 cd examples/
-python ~/Burbuja/Burbuja/burbuja.py trypsin_benzamidine_bubble.pdb
+burbuja trypsin_benzamidine_bubble.pdb
 ```
 
 ### Important Options and Hints
