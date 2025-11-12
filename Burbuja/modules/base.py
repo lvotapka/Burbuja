@@ -9,8 +9,6 @@ import numpy as np
 # Density threshold for bubble detection
 DEFAULT_DENSITY_THRESHOLD = 0.25 
 # Minimum fraction of the total system volume for a bubble to be considered significant
-# TODO: remove
-#DEFAULT_MINIMUM_BUBBLE_FRACTION = 0.005  
 # Radial number of neighbor cells to include in density averaging
 DEFAULT_NEIGHBOR_CELLS = 4
 DEFAULT_MINIMUM_BUBBLE_VOLUME = 0.1
